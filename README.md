@@ -1,5 +1,7 @@
 # Depixelation Tool
 
+![LSAB901GQFM7FKDBDMQN](https://github.com/user-attachments/assets/dfb1bb63-da0e-40ba-8db4-44aaa952e792)
+
 ## Description
 A machine learning tool designed to recognize text from heavily pixelated images. This tool generates datasets of pixelated text images, trains a neural network model to recognize the text, and provides benchmarking capabilities to evaluate the model's performance.
 
