@@ -11,6 +11,7 @@ You can customize all parameters directly in the files.
 Files with `launch_` prefix will install dependencies for the whole project automatically.
 
 If you are not interested in training your own model, then you can use an existing model and run `launch_inference.py`.
+Different models and image sizes are currently incompatible. The included model weights are for 64x8px images with alphanumberic text and block average pixelation.
 
 ### Dataset Generation
 Generate a dataset of pixelated text images using `data_generator.py`.
@@ -22,4 +23,4 @@ Train the OCR model using `launch_trainer.py`
 Evaluate the trained model using `launch_benchmarker.py`
 
 ### Inference
-Depixelate a single image using `launch_inference.py`
+Depixelate a folder of images using `launch_inference.py`
