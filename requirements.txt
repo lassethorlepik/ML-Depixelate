@@ -1,0 +1,8 @@
+tensorflow
+numpy
+pillow
+matplotlib
+colorama
+keras
+rich
+Levenshtein
