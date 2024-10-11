@@ -22,7 +22,11 @@ def print(text):
 
 def remove_prefix(text):
     """Remove the prefix."""
-    return text.split("_")[1]
+    split = text.split("_")
+    if (len(split) > 1):
+        return split[1]
+    else:
+        return text
 
 
 def generate_random_string(length):

@@ -21,7 +21,7 @@ setup_folders()
 check_gpu_compute()
 
 # Path to the data directory
-data_dir = Path("./datasets/dataset-N200000-512-64-64-8-1-20-8-8-24-28-0-20-F1-arial.ttf")
+data_dir = Path("./datasets/dataset-N50000-512-64-1-20-8-8-24-28-0-20-F1-arial.ttf")
 # Batch size for validation, one batch is output as a single image
 batch_size = 32
 # Image dimensions

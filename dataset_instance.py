@@ -11,21 +11,24 @@ from util import remove_prefix, print
 
 
 class DatasetInstance():
-    def __init__(self, data_dir, batch_size, img_width, img_height, train_data_amount):
+    def __init__(self, data_dir, batch_size, img_width, img_height, train_data_amount, charset=None):
             self.data_dir = data_dir
             self.batch_size = batch_size
             self.img_width = img_width
             self.img_height = img_height
             self.train_data_amount = train_data_amount
-            self.load_dataset()
+            self.load_dataset(charset)
             self.preprocess()
             self.dataset_finalize()
     
-    def load_dataset(self):
+    def load_dataset(self, charset):
         # Get list of all the images
         self.images = sorted(list(map(str, list(self.data_dir.glob("*.png")))))
         self.labels = [remove_prefix(img.split(os.path.sep)[-1].split(".png")[0]) for img in self.images]
-        characters = set(char for label in self.labels for char in label)
+        if charset is None:
+            characters = set(char for label in self.labels for char in label)
+        else:
+            characters = set(char for char in charset)
         self.characters = sorted(list(characters))
 
         print(f"Number of images found: {len(self.images)}")
@@ -67,19 +70,22 @@ class DatasetInstance():
         #img = random_shift(img)
         # 9. Map the characters in label to numbers
         label = self.char_to_num(tf.strings.unicode_split(label, input_encoding="UTF-8"))
-        # 10. Return a dict as our model is expecting two inputs
-        return {"image": img, "label": label}
+        # 10. Compute label length
+        label_length = tf.shape(label)[0]
+        return {"image": img, "label": label, "label_length": label_length}
     
     def dataset_finalize(self):
         # Create Dataset objects
         pad_token = 0
         padded_shapes = {
             'image': (self.img_height, self.img_width, 1),  # Assuming all images already have the same size
-            'label': [None]  # Padding the sequence dimension of the labels
+            'label': [None],  # Padding the sequence dimension of the labels
+            'label_length': []
         }
         padding_values = {
             'image': 0.0,  # Assuming images are normalized to [0, 1], use 0 for padding
-            'label': tf.constant(pad_token, dtype=tf.int64)  # Use a pad token for labels
+            'label': tf.constant(pad_token, dtype=tf.int64),  # Use a pad token for labels
+            'label_length': tf.constant(0, dtype=tf.int32)
         }
 
         train_dataset = tf.data.Dataset.from_tensor_slices((self.x_train, self.y_train))
@@ -103,6 +109,7 @@ class DatasetInstance():
         for batch in self.train_dataset.take(1):
             images = batch["image"]
             labels = batch["label"]
+            label_lengths = batch["label_length"]
             for i in range(min(self.batch_size, 16)):
                 # Upscale the image by a factor of 4 using nearest neighbor interpolation
                 img = images[i]
@@ -112,7 +119,7 @@ class DatasetInstance():
                 label = tf.strings.reduce_join(self.num_to_char(labels[i])).numpy().decode("utf-8").replace("[UNK]", "")
 
                 ax[i // 4, i % 4].imshow(upscaled_img[:, :, 0], cmap="gray")
-                ax[i // 4, i % 4].set_title(label, fontsize=8)
+                ax[i // 4, i % 4].set_title(f"{label} ({label_lengths[i]})", fontsize=8)
                 ax[i // 4, i % 4].axis("off")
                 
                 # Get the axis limits

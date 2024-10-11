@@ -250,15 +250,17 @@ class CTCLayer(layers.Layer):
         super().__init__(name=name)
         self.loss_fn = ctc_batch_cost
 
-    def call(self, y_true, y_pred):
+    def call(self, inputs):
+        y_true, y_pred, label_length = inputs
         # Compute the training-time loss value and add it
-        # to the layer using `self.add_loss()`.
         batch_len = ops.cast(ops.shape(y_true)[0], dtype="int64")
         input_length = ops.cast(ops.shape(y_pred)[1], dtype="int64")
-        label_length = ops.cast(ops.shape(y_true)[1], dtype="int64")
+
+        # Ensure label_length is of type int64
+        label_length = ops.cast(label_length, dtype="int64")
+        label_length = ops.expand_dims(label_length, axis=1)
 
         input_length = input_length * ops.ones(shape=(batch_len, 1), dtype="int64")
-        label_length = label_length * ops.ones(shape=(batch_len, 1), dtype="int64")
 
         loss = self.loss_fn(y_true, y_pred, input_length, label_length)
         self.add_loss(loss)
@@ -267,12 +269,14 @@ class CTCLayer(layers.Layer):
         return y_pred
 
 
+
 def build_model(img_width, img_height, char_to_num):
     # Inputs to the model
     input_img = layers.Input(
         shape=(img_height, img_width, 1), name="image", dtype="float32"
     )
     labels = layers.Input(name="label", shape=(None,), dtype="float32")
+    label_length = layers.Input(name="label_length", shape=(), dtype="int32")
 
     # Define the L2 regularization factor
     l2_regularizer = regularizers.l2(0.001)
@@ -322,11 +326,13 @@ def build_model(img_width, img_height, char_to_num):
     )(x)
 
     # Add CTC layer for calculating CTC loss at each step
-    output = CTCLayer(name="ctc_loss")(labels, x)
+    output = CTCLayer(name="ctc_loss")([labels, x, label_length])
 
     # Define the model
     model = keras.models.Model(
-        inputs={"image": input_img, "label": labels}, outputs=output, name="ocr_model_v1"
+        inputs={"image": input_img, "label": labels, "label_length": label_length},
+        outputs=output,
+        name="ocr_model_v1"
     )
     # Optimizer
     opt = keras.optimizers.Adam(learning_rate=0.001)
